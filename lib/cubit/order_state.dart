@@ -30,7 +30,7 @@ class GetOrderSuccess extends OrderState {
 class OrderFailed extends OrderState {
   const OrderFailed(this.error);
 
-  final String error;
+  final Map<String, dynamic> error;
 
   @override
   List<Object> get props => [error];

@@ -36,7 +36,12 @@ class AuthCubit extends Cubit<AuthState> {
       emit(AuthSuccess(user));
     } on DioError catch (e) {
       if (e.response != null) {
-        emit(AuthFailed(e.response!.data["message"]));
+        if (e.response?.data.runtimeType == String) {
+          emit(const AuthFailed(
+              "Connection Timeout, please check your internet connection"));
+        } else {
+          emit(AuthFailed(e.response!.data["message"]));
+        }
       } else {
         emit(AuthFailed(e.message));
       }
@@ -52,18 +57,23 @@ class AuthCubit extends Cubit<AuthState> {
     required String city,
     required int houseNumber,
     required File? photoPath,
+    required String code,
+    required String pre,
   }) async {
     try {
       emit(AuthLoading());
       UserModel user = await UserServices().register(
-          name: name,
-          email: email,
-          password: password,
-          address: address,
-          phoneNumber: phoneNumber,
-          city: city,
-          houseNumber: houseNumber,
-          photoPath: photoPath);
+        name: name,
+        email: email,
+        password: password,
+        address: address,
+        phoneNumber: phoneNumber,
+        city: city,
+        houseNumber: houseNumber,
+        photoPath: photoPath,
+        code: code,
+        pre: pre,
+      );
       emit(AuthSuccess(user));
     } on DioError catch (e) {
       if (e.response != null) {

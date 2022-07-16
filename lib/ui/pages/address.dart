@@ -1,17 +1,15 @@
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:sanjaya/cubit/auth_cubit.dart';
-import 'package:sanjaya/cubit/food_cubit.dart';
-import 'package:sanjaya/cubit/order_cubit.dart';
-import 'package:sanjaya/cubit/page_cubit.dart';
+import 'package:sanjaya/services/user_services.dart';
 import 'package:sanjaya/shared/theme.dart';
-import 'package:sanjaya/ui/pages/success_sign_up.dart';
+import 'package:sanjaya/ui/pages/confirm_email.dart';
 import 'package:sanjaya/ui/widgets/custom_button.dart';
 import 'package:sanjaya/ui/widgets/custom_form_field.dart';
 import 'package:sanjaya/ui/widgets/header.dart';
+import 'package:sanjaya/utils/custom_exception.dart';
 // ignore: import_of_legacy_library_into_null_safe
 import 'package:smart_select/smart_select.dart';
 import '../../shared/extension.dart';
@@ -81,94 +79,86 @@ class Address extends HookWidget {
                 final phoneController = useTextEditingController();
                 final addressController = useTextEditingController();
                 final houseController = useTextEditingController();
-                return BlocConsumer<AuthCubit, AuthState>(
-                  listener: (context, state) {
-                    if (state is AuthSuccess) {
-                      context.read<FoodCubit>().getAllFoods();
-                      context.read<OrderCubit>().getAllOrder();
-                      context.read<PageCubit>().setPage(0);
-                      Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const SuccessSignUp(),
-                          ),
-                          (route) => false);
-                    } else if (state is AuthFailed) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(state.error),
-                          backgroundColor: cRedColor,
-                        ),
-                      );
-                    }
-                  },
-                  builder: (context, state) {
-                    return Form(
-                      key: _formKey.value,
-                      child: Column(
+                return Form(
+                  key: _formKey.value,
+                  child: Column(
+                    children: [
+                      CustomFormField(
+                        label: "Phone No.",
+                        hint: "Type your phone number",
+                        bottomMargin: 16,
+                        validator: (val) {
+                          if (val!.isValidPhone) return null;
+                          return 'Enter valid Indonesian phone number';
+                        },
+                        controller: phoneController,
+                      ),
+                      CustomFormField(
+                        label: "Address",
+                        hint: "Type your address",
+                        bottomMargin: 16,
+                        controller: addressController,
+                      ),
+                      CustomFormField(
+                        label: "House No.",
+                        hint: "Type your house number",
+                        bottomMargin: 16,
+                        validator: (val) {
+                          if (val!.isValidNumber) return null;
+                          return 'Enter only number';
+                        },
+                        controller: houseController,
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          CustomFormField(
-                            label: "Phone No.",
-                            hint: "Type your phone number",
-                            bottomMargin: 16,
-                            validator: (val) {
-                              if (val!.isValidPhone) return null;
-                              return 'Enter valid Indonesian phone number';
-                            },
-                            controller: phoneController,
+                          Text(
+                            "City",
+                            textAlign: TextAlign.start,
+                            style: tBlackText.copyWith(
+                              fontSize: 16,
+                            ),
                           ),
-                          CustomFormField(
-                            label: "Address",
-                            hint: "Type your address",
-                            bottomMargin: 16,
-                            controller: addressController,
+                          const SizedBox(height: 6),
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 24),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: cSecondaryColor),
+                              borderRadius: defaultBorder,
+                            ),
+                            child: SmartSelect<String>.single(
+                              title: "Select your city",
+                              modalType: S2ModalType.popupDialog,
+                              modalFilter: true,
+                              value: cityState.value,
+                              choiceItems: options,
+                              onChange: (val) {
+                                cityState.value = val.value;
+                              },
+                            ),
                           ),
-                          CustomFormField(
-                            label: "House No.",
-                            hint: "Type your house number",
-                            bottomMargin: 16,
-                            validator: (val) {
-                              if (val!.isValidNumber) return null;
-                              return 'Enter only number';
-                            },
-                            controller: houseController,
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "City",
-                                textAlign: TextAlign.start,
-                                style: tBlackText.copyWith(
-                                  fontSize: 16,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Container(
-                                margin: const EdgeInsets.only(bottom: 24),
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: cSecondaryColor),
-                                  borderRadius: defaultBorder,
-                                ),
-                                child: SmartSelect<String>.single(
-                                  title: "Select your city",
-                                  modalType: S2ModalType.popupDialog,
-                                  modalFilter: true,
-                                  value: cityState.value,
-                                  choiceItems: options,
-                                  onChange: (val) {
-                                    cityState.value = val.value;
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                          state is AuthLoading
-                              ? const CircularProgressIndicator()
-                              : CustomButton(
-                                  title: "Sign Up Now",
-                                  eventFunc: () {
-                                    context.read<AuthCubit>().signUp(
+                        ],
+                      ),
+                      HookBuilder(builder: (context) {
+                        final loading = useState(false);
+                        return loading.value
+                            ? const CircularProgressIndicator()
+                            : CustomButton(
+                                title: "Sign Up Now",
+                                eventFunc: () async {
+                                  try {
+                                    loading.value = true;
+                                    var data =
+                                        await UserServices().checkEmail(email);
+                                    loading.value = false;
+                                    if (data.isEmailExist) {
+                                      throw CustomException(
+                                          "Email already Exist");
+                                    }
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ConfirmEmail(
                                           name: name,
                                           email: email,
                                           password: password,
@@ -177,14 +167,54 @@ class Address extends HookWidget {
                                           city: cityState.value,
                                           houseNumber:
                                               int.parse(houseController.text),
-                                          photoPath: file,
+                                          file: file,
+                                          pre: data.pre,
+                                        ),
+                                      ),
+                                    );
+                                  } catch (e) {
+                                    if (e is DioError) {
+                                      if (e.response != null) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                                e.response!.data["message"]),
+                                            backgroundColor: cRedColor,
+                                          ),
                                         );
-                                  },
-                                ),
-                        ],
-                      ),
-                    );
-                  },
+                                      } else {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(e.message),
+                                            backgroundColor: cRedColor,
+                                          ),
+                                        );
+                                      }
+                                    } else if (e is CustomException) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(e.cause),
+                                          backgroundColor: cRedColor,
+                                        ),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(e.toString()),
+                                          backgroundColor: cRedColor,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                              );
+                      }),
+                    ],
+                  ),
                 );
               },
             ),

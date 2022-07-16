@@ -14,11 +14,24 @@ class OrderCubit extends Cubit<OrderState> {
       emit(OrderLoading());
       var success = await OrderServices().orderFoods(orders);
       emit(OrderSuccess(success));
-    } on DioError catch (e) {
-      if (e.response != null) {
-        emit(OrderFailed(e.response!.data["message"]));
+    } catch (e) {
+      if (e is DioError) {
+        if (e.response != null) {
+          emit(OrderFailed({
+            "message": e.response!.data["message"],
+            "statusCode": e.response!.statusCode,
+          }));
+        } else {
+          emit(OrderFailed({
+            "message": e.message,
+            "statusCode": 500,
+          }));
+        }
       } else {
-        emit(OrderFailed(e.message));
+        emit(OrderFailed({
+          "message": e.toString(),
+          "statusCode": 500,
+        }));
       }
     }
   }
@@ -26,28 +39,60 @@ class OrderCubit extends Cubit<OrderState> {
   void getAllOrder() async {
     try {
       emit(OrderLoading());
-      var successGet = await OrderServices().getAllOrder();
+      var successGet = await OrderServices().getAllTransactions();
       emit(GetOrderSuccess(successGet));
-    } on DioError catch (e) {
-      if (e.response != null) {
-        emit(OrderFailed(e.response!.data["message"]));
+    } catch (e) {
+      if (e is DioError) {
+        if (e.response != null) {
+          emit(OrderFailed({
+            "message": e.response!.data["message"],
+            "statusCode": e.response!.statusCode,
+          }));
+        } else {
+          emit(OrderFailed({
+            "message": e.message,
+            "statusCode": 500,
+          }));
+        }
       } else {
-        emit(OrderFailed(e.message));
+        emit(OrderFailed({
+          "message": e.toString(),
+          "statusCode": 500,
+        }));
       }
     }
   }
 
-  void cancelOrder(String orderId, String foodId) async {
+  void cancelOrder(String transactionId, String foodId) async {
     try {
       emit(OrderLoading());
-      var cancelOrder = await OrderServices().cancelOrder(orderId, foodId);
+      var cancelOrder =
+          await OrderServices().cancelTransaction(transactionId, foodId);
       emit(OrderSuccess(cancelOrder));
-    } on DioError catch (e) {
-      if (e.response != null) {
-        emit(OrderFailed(e.response!.data["message"]));
+    } catch (e) {
+      if (e is DioError) {
+        if (e.response != null) {
+          emit(OrderFailed({
+            "message": e.response!.data["message"],
+            "statusCode": e.response!.statusCode,
+          }));
+        } else {
+          emit(OrderFailed({
+            "message": e.message,
+            "statusCode": 500,
+          }));
+        }
       } else {
-        emit(OrderFailed(e.message));
+        emit(OrderFailed({
+          "message": e.toString(),
+          "statusCode": 500,
+        }));
       }
     }
+  }
+
+  OrderState? getTransactions() {
+    if (state is GetOrderSuccess) return state;
+    return null;
   }
 }

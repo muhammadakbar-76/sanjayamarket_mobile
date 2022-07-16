@@ -8,6 +8,7 @@ import 'package:loading_indicator/loading_indicator.dart';
 import 'package:sanjaya/cubit/auth_cubit.dart';
 import 'package:sanjaya/cubit/food_cubit.dart';
 import 'package:sanjaya/cubit/order_cubit.dart';
+import 'package:sanjaya/models/storage_item.dart';
 import 'package:sanjaya/services/secure_storage_service.dart';
 import 'package:sanjaya/shared/theme.dart';
 
@@ -26,20 +27,26 @@ class SplashPage extends HookWidget {
             var connection = await InternetAddress.lookup("www.google.com");
             if (connection.isNotEmpty) {
               loading.value = true;
-              bool isContainKey = await SecureStorageService()
-                  .containsKeyInStorage("refresh_token");
-              if (!isContainKey) {
+              var isContainKey = await Future.wait([
+                SecureStorageService().containsKeyInStorage("refresh_token"),
+                SecureStorageService().containsKeyInStorage("upload"),
+              ]);
+              if (!isContainKey[1]) {
+                await SecureStorageService().writeSecureData(
+                    const StorageItem(key: "upload", value: "0"));
+              }
+              if (!isContainKey[0]) {
                 Navigator.pushNamedAndRemoveUntil(
                     context, "/sign-in", (route) => false);
               } else {
-                String? strDate =
-                    await SecureStorageService().readSecureData("date");
-                var token = await SecureStorageService()
-                    .readSecureData("refresh_token");
+                var data = await Future.wait([
+                  SecureStorageService().readSecureData("date"),
+                  SecureStorageService().readSecureData("refresh_token"),
+                ]);
                 var dateNow = DateTime.now();
-                if (token != null &&
-                    dateNow.difference(DateTime.parse(strDate!)).inDays <= 29) {
-                  context.read<AuthCubit>().refreshToken(token);
+                if (data[1] != null &&
+                    dateNow.difference(DateTime.parse(data[0]!)).inDays <= 29) {
+                  context.read<AuthCubit>().refreshToken(data[1]!);
                 } else {
                   await SecureStorageService().deleteAllStorage();
                   Navigator.pushNamedAndRemoveUntil(
@@ -74,22 +81,12 @@ class SplashPage extends HookWidget {
                 (route) => false,
               );
             } else if (state is AuthFailed) {
+              loading.value = false;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.error),
                   backgroundColor: cRedColor,
                 ),
-              );
-              loading.value = false;
-              Timer(
-                const Duration(seconds: 2),
-                () {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    "/sign-in",
-                    (route) => false,
-                  );
-                },
               );
             }
           },

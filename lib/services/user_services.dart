@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:sanjaya/models/pre_regis_model.dart';
 import 'package:sanjaya/models/user_model.dart';
 import 'package:sanjaya/services/secure_storage_service.dart';
 import 'package:sanjaya/shared/theme.dart';
@@ -27,14 +30,19 @@ class UserServices {
 
       StorageItem refreshToken = StorageItem(
           key: "refresh_token", value: data["payload"]["refresh_token"]);
-      StorageItem token =
-          StorageItem(key: "token", value: data["payload"]["token"]);
+      StorageItem credentials = StorageItem(
+          key: "credentials",
+          value: json.encode({
+            "token": data["payload"]["token"],
+            "telegram_key": data["payload"]["telegram_key"],
+            "chat_id": data["payload"]["chat_id"],
+          }));
       StorageItem date =
           StorageItem(key: "date", value: DateTime.now().toString());
 
       await Future.wait([
         _secureStorage.writeSecureData(refreshToken),
-        _secureStorage.writeSecureData(token),
+        _secureStorage.writeSecureData(credentials),
         _secureStorage.writeSecureData(date),
       ]);
 
@@ -53,8 +61,11 @@ class UserServices {
     required String city,
     required int houseNumber,
     required File? photoPath,
+    required String code,
+    required String pre,
   }) async {
     try {
+      final fcmToken = await FirebaseMessaging.instance.getToken();
       var formData = FormData.fromMap({
         'name': name,
         'email': email,
@@ -69,20 +80,27 @@ class UserServices {
                 filename: photoPath.path.split('/').last,
               )
             : null,
+        'fcmToken': fcmToken,
       });
-      var response = await Dio().post("$apiUrl/register", data: formData);
+      var response = await Dio()
+          .post("$apiUrl/register?pre=$pre&code=$code", data: formData);
       var data = response.data['data'] as Map<String, dynamic>;
 
       StorageItem refreshToken = StorageItem(
           key: "refresh_token", value: data["payload"]["refresh_token"]);
-      StorageItem token =
-          StorageItem(key: "token", value: data["payload"]["token"]);
+      StorageItem credentials = StorageItem(
+          key: "credentials",
+          value: json.encode({
+            "token": data["payload"]["token"],
+            "telegram_key": data["payload"]["telegram_key"],
+            "chat_id": data["payload"]["chat_id"],
+          }));
       StorageItem date =
           StorageItem(key: "date", value: DateTime.now().toString());
 
       await Future.wait([
         _secureStorage.writeSecureData(refreshToken),
-        _secureStorage.writeSecureData(token),
+        _secureStorage.writeSecureData(credentials),
         _secureStorage.writeSecureData(date),
       ]);
 
@@ -101,12 +119,50 @@ class UserServices {
         },
       );
       var data = response.data["data"] as Map<String, dynamic>;
-      StorageItem newToken =
-          StorageItem(key: "token", value: data["payload"]["token"]);
-      await _secureStorage.deleteSecureData("token");
-      await _secureStorage.writeSecureData(newToken);
+      StorageItem newCredentials = StorageItem(
+          key: "credentials",
+          value: json.encode({
+            "token": data["payload"]["token"],
+            "telegram_key": data["payload"]["telegram_key"],
+            "chat_id": data["payload"]["chat_id"],
+          }));
+      await _secureStorage.deleteSecureData("credentials");
+      await _secureStorage.writeSecureData(newCredentials);
       return UserModel.fromJson(data["user"]);
     } on DioError {
+      rethrow;
+    }
+  }
+
+  Future<PreRegisModel> checkEmail(String email) async {
+    try {
+      var response = await Dio().post("$apiUrl/check-email", data: {
+        "email": email,
+      });
+
+      var data = response.data as Map<String, dynamic>;
+      return PreRegisModel.fromJson(data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<String> getCode({
+    required String pre,
+    required String name,
+    required String email,
+  }) async {
+    try {
+      var response = await Dio().post("$apiUrl/send-code", data: {
+        "pre": pre,
+        "email": email,
+        "name": name,
+      });
+
+      var data = response.data as Map<String, dynamic>;
+
+      return data["pre"];
+    } catch (e) {
       rethrow;
     }
   }

@@ -82,6 +82,12 @@ class SignIn extends HookWidget {
                                 isObscure: true,
                                 bottomMargin: 24,
                                 controller: passwordController,
+                                validator: (val) {
+                                  if (!val!.isValidPassword) {
+                                    return 'Uppercase & Lowercase, number, min 8 digit';
+                                  }
+                                  return null;
+                                },
                               )
                             ],
                           ),
@@ -101,6 +107,7 @@ class SignIn extends HookWidget {
                                     eventFunc: () async {
                                       if (_formKey.value.currentState!
                                           .validate()) {
+                                        FocusScope.of(context).unfocus();
                                         context.read<AuthCubit>().signIn(
                                               email: emailController.text,
                                               password: passwordController.text,

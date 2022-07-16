@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "949219386468",
+    "project_id": "sanjayamarket-b5c81",
+    "storage_bucket": "sanjayamarket-b5c81.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:949219386468:android:0ab89e93d4b2351b712b71",
+        "android_client_info": {
+          "package_name": "com.akbar76.sanjay.sanjaya"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "949219386468-aedjqtof2q63bboanetvch26mdaq8t4j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApSD3qBpdqy0rZSWF5KgXVA3-vIY8_8Aw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "949219386468-aedjqtof2q63bboanetvch26mdaq8t4j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -13,11 +13,12 @@ class FoodCubit extends Cubit<FoodState> {
       emit(FoodLoading());
       List<dynamic> foods = await FoodServices().getAllFoods();
       emit(FoodSuccess(foods));
-    } on DioError catch (e) {
-      if (e.response != null) {
+    } catch (e) {
+      if (e is DioError) {
+        if (e.response == null) emit(FoodFailed(e.message));
         emit(FoodFailed(e.response!.data["message"]));
       } else {
-        emit(FoodFailed(e.message));
+        emit(FoodFailed(e.toString()));
       }
     }
   }

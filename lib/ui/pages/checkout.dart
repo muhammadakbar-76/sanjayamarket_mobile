@@ -4,6 +4,8 @@ import 'package:sanjaya/cubit/auth_cubit.dart';
 import 'package:sanjaya/cubit/cart_cubit.dart';
 import 'package:sanjaya/cubit/order_cubit.dart';
 import 'package:sanjaya/models/cart_model.dart';
+import 'package:sanjaya/models/storage_item.dart';
+import 'package:sanjaya/services/secure_storage_service.dart';
 import 'package:sanjaya/shared/formatter.dart';
 import 'package:sanjaya/ui/widgets/custom_button.dart';
 import 'package:sanjaya/ui/widgets/header.dart';
@@ -147,7 +149,7 @@ class Checkout extends StatelessWidget {
                 context, "/success-checkout", (route) => false);
           } else if (state is OrderFailed) {
             ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text(state.error)));
+                .showSnackBar(SnackBar(content: Text(state.error["message"])));
           }
         },
         builder: (context, state) {
@@ -177,14 +179,28 @@ class Checkout extends StatelessWidget {
                             builder: (context, state) {
                               return CustomButton(
                                 title: "Order Now",
-                                eventFunc: () {
-                                  if (state.isNotEmpty) {
-                                    context.read<OrderCubit>().orderFoods({
-                                      "food": state.map((el) => el.id).toList(),
-                                      "quantity":
-                                          state.map((el) => el.amount).toList(),
-                                    });
+                                eventFunc: () async {
+                                  if (state.isEmpty) return;
+                                  final uploadTry = await SecureStorageService()
+                                      .containsKeyInStorage("upload");
+                                  if (uploadTry) {
+                                    var storeItem = const StorageItem(
+                                        key: "upload", value: "0");
+                                    await SecureStorageService()
+                                        .deleteSecureData("upload");
+                                    await SecureStorageService()
+                                        .writeSecureData(storeItem);
+                                  } else {
+                                    var storeItem = const StorageItem(
+                                        key: "upload", value: "0");
+                                    await SecureStorageService()
+                                        .writeSecureData(storeItem);
                                   }
+                                  context.read<OrderCubit>().orderFoods({
+                                    "food": state.map((el) => el.id).toList(),
+                                    "quantity":
+                                        state.map((el) => el.amount).toList(),
+                                  });
                                 },
                               );
                             },

@@ -1,14 +1,15 @@
 import 'package:equatable/equatable.dart';
 
 class UserModel extends Equatable {
-  const UserModel(
-      {required this.name,
-      required this.email,
-      required this.address,
-      required this.phoneNumber,
-      required this.city,
-      required this.photoPath,
-      required this.houseNumber});
+  const UserModel({
+    required this.name,
+    required this.email,
+    required this.address,
+    required this.phoneNumber,
+    required this.city,
+    required this.photoPath,
+    required this.houseNumber,
+  });
 
   final String name;
   final String email;

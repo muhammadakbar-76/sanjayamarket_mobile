@@ -12,6 +12,7 @@ class CustomOrderContent extends StatelessWidget {
     required this.amount,
     required this.finalPrice,
     required this.status,
+    required this.transactionId,
     this.orderId = "",
     this.foodId = "",
     this.isPost = false,
@@ -35,6 +36,8 @@ class CustomOrderContent extends StatelessWidget {
   final String orderId;
 
   final String foodId;
+
+  final String transactionId;
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +66,7 @@ class CustomOrderContent extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        if (status == "Belum Bayar") {
+        if (status == "Belum_Bayar") {
           showDialog<String>(
             context: context,
             builder: (_) => AlertDialog(
@@ -79,7 +82,9 @@ class CustomOrderContent extends StatelessWidget {
                   child: const Text("Yes"),
                   onPressed: () {
                     Navigator.pop(context, "Yes");
-                    context.read<OrderCubit>().cancelOrder(orderId, foodId);
+                    context
+                        .read<OrderCubit>()
+                        .cancelOrder(transactionId, foodId);
                   },
                 )
               ],

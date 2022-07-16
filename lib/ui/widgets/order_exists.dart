@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:sanjaya/models/order_model.dart';
+import 'package:sanjaya/services/secure_storage_service.dart';
 import 'package:sanjaya/shared/theme.dart';
 import 'package:sanjaya/ui/pages/payment_page.dart';
 import 'package:sanjaya/ui/widgets/custom_order_content.dart';
@@ -18,10 +19,10 @@ class OrderExist extends HookWidget {
   Widget build(BuildContext context) {
     List<CustomOrderContent> inProgressList = [];
     List<CustomOrderContent> postOrdersList = [];
-    Iterable<dynamic> inProgress = allOrder.orders.where((element) =>
+    Iterable<dynamic> inProgress = allOrder.transactions.where((element) =>
         element["food"]["status"] != "Canceled" &&
         element["food"]["status"] != "Finished");
-    Iterable<dynamic> postOrders = allOrder.orders.where((element) =>
+    Iterable<dynamic> postOrders = allOrder.transactions.where((element) =>
         element["food"]["status"] == "Canceled" ||
         element["food"]["status"] == "Finished");
     if (inProgress.isNotEmpty) {
@@ -33,7 +34,7 @@ class OrderExist extends HookWidget {
           finalPrice: e["food"]["price"],
           status: e["food"]["status"],
           foodId: e["food"]["_id"],
-          orderId: e["_id"],
+          transactionId: e["_id"],
         );
       }).toList();
     }
@@ -46,6 +47,7 @@ class OrderExist extends HookWidget {
           finalPrice: e["food"]["price"],
           isPost: true,
           status: e["food"]["status"],
+          transactionId: e["_id"],
         );
       }).toList();
     }
@@ -110,8 +112,11 @@ class OrderExist extends HookWidget {
               child: Visibility(
                 child: IconButton(
                   icon: const Icon(Icons.payment),
-                  onPressed: () {
-                    if (allOrder.payments >= 0) {
+                  onPressed: () async {
+                    var uploadTry =
+                        await SecureStorageService().readSecureData("upload");
+                    if (uploadTry == null) return;
+                    if (allOrder.payments >= 0 && int.parse(uploadTry) <= 2) {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -122,7 +127,7 @@ class OrderExist extends HookWidget {
                     }
                   },
                 ),
-                visible: allOrder.payments >= 0 ? true : false,
+                visible: allOrder.payments > 0 ? true : false,
               ),
             ),
           ],

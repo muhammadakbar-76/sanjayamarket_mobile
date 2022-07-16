@@ -1,48 +1,69 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:sanjaya/models/order_model.dart';
 import 'package:sanjaya/services/secure_storage_service.dart';
 import 'package:sanjaya/shared/theme.dart';
+import 'package:sanjaya/utils/custom_exception.dart';
 
 class OrderServices {
   Future<String> orderFoods(Map<String, dynamic> orders) async {
     try {
-      var token = await SecureStorageService().readSecureData("token");
-      var response = await Dio().post(
-        "$apiUrl/order",
-        options: Options(headers: {'Authorization': "Bearer $token"}),
-        data: orders,
-      );
-      return response.data;
+      var credentials =
+          await SecureStorageService().readSecureData("credentials");
+      if (credentials != null) {
+        Map token = jsonDecode(credentials);
+        var response = await Dio().post(
+          "$apiUrl/transaction",
+          options:
+              Options(headers: {'Authorization': "Bearer ${token['token']}"}),
+          data: orders,
+        );
+        return response.data;
+      }
+      throw CustomException("Credentials Is Null");
     } on DioError {
       rethrow;
     }
   }
 
-  Future<String> cancelOrder(String orderId, String foodId) async {
+  Future<String> cancelTransaction(String transactionId, String foodId) async {
     try {
-      var token = await SecureStorageService().readSecureData("token");
-      var response = await Dio().put(
-        "$apiUrl/order",
-        options: Options(headers: {'Authorization': "Bearer $token"}),
-        data: {
-          "orderId": orderId,
-          "foodId": foodId,
-        },
-      );
-      return response.data;
+      var credentials =
+          await SecureStorageService().readSecureData("credentials");
+      if (credentials != null) {
+        Map token = jsonDecode(credentials);
+        var response = await Dio().put(
+          "$apiUrl/transaction",
+          options:
+              Options(headers: {'Authorization': "Bearer ${token['token']}"}),
+          data: {
+            "transactionId": transactionId,
+            "foodId": foodId,
+          },
+        );
+        return response.data;
+      }
+      throw CustomException("Credentials Is Null");
     } on DioError {
       rethrow;
     }
   }
 
-  Future<OrderModel> getAllOrder() async {
+  Future<OrderModel> getAllTransactions() async {
     try {
-      var token = await SecureStorageService().readSecureData("token");
-      var response = await Dio().get(
-        "$apiUrl/order",
-        options: Options(headers: {"Authorization": "Bearer $token"}),
-      );
-      return OrderModel.fromJson(response.data);
+      var credentials =
+          await SecureStorageService().readSecureData("credentials");
+      if (credentials != null) {
+        Map token = jsonDecode(credentials);
+        var response = await Dio().get(
+          "$apiUrl/transactions",
+          options:
+              Options(headers: {"Authorization": "Bearer ${token['token']}"}),
+        );
+        return OrderModel.fromJson(response.data);
+      }
+      throw CustomException("Credentials Is Null");
     } on DioError {
       rethrow;
     }

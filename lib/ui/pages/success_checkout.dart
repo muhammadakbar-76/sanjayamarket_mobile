@@ -46,7 +46,12 @@ class SuccessCheckout extends StatelessWidget {
             const SizedBox(height: 12),
             CustomButton(
               title: "View My Order",
-              eventFunc: () {},
+              eventFunc: () {
+                context.read<PageCubit>().setPage(1);
+                context.read<CartCubit>().removeAll();
+                Navigator.pushNamedAndRemoveUntil(
+                    context, "/main", (route) => false);
+              },
               width: 200,
               type: 1,
             ),

@@ -215,12 +215,7 @@ class FoodDetail extends HookWidget {
                                     price: price,
                                     amount: foodAmount.value,
                                   ));
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const Checkout(),
-                                ),
-                              );
+                              Navigator.pushNamed(context, "/checkout");
                             },
                             width: 163,
                           ),

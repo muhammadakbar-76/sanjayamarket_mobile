@@ -15,14 +15,7 @@ class OrderPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocConsumer<OrderCubit, OrderState>(
       listener: (context, state) {
-        if (state is OrderFailed) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.error),
-              backgroundColor: cRedColor,
-            ),
-          );
-        } else if (state is OrderSuccess) {
+        if (state is OrderSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.success),
@@ -36,11 +29,21 @@ class OrderPage extends StatelessWidget {
       },
       builder: (context, state) {
         if (state is GetOrderSuccess) {
-          if (state.successGet.orders.isNotEmpty) {
+          if (state.successGet.transactions.isNotEmpty) {
             return OrderExist(state.successGet);
           } else {
             return const EmptyOrder();
           }
+        } else if (state is OrderFailed) {
+          if (state.error["statusCode"] == 404) {
+            return const EmptyOrder();
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.error["message"]),
+              backgroundColor: cRedColor,
+            ),
+          );
         }
         return Center(
           child: SizedBox(

@@ -5,6 +5,7 @@ import 'package:sanjaya/models/cart_model.dart';
 import 'package:sanjaya/ui/pages/home_page.dart';
 import 'package:sanjaya/ui/pages/order_page.dart';
 import 'package:sanjaya/ui/pages/profile_page.dart';
+import 'package:sanjaya/ui/widgets/custom_button.dart';
 import 'package:sanjaya/ui/widgets/cutsom_button_navigation.dart';
 import 'package:sanjaya/ui/widgets/ordered_item.dart';
 import '../../cubit/page_cubit.dart';
@@ -66,12 +67,29 @@ class MainPage extends StatelessWidget {
                             ),
                             child: Padding(
                               padding: const EdgeInsets.all(12),
-                              child: Text(
-                                "Food Cart",
-                                style: tBlackText.copyWith(
-                                  fontSize: 20,
-                                  fontWeight: medium,
-                                ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "Food Cart",
+                                    style: tBlackText.copyWith(
+                                      fontSize: 20,
+                                      fontWeight: medium,
+                                    ),
+                                  ),
+                                  Visibility(
+                                    visible: state.isEmpty ? false : true,
+                                    child: CustomButton(
+                                      title: "Checkout",
+                                      eventFunc: () {
+                                        Navigator.pushNamed(
+                                            context, "/checkout");
+                                      },
+                                      width: 100,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
